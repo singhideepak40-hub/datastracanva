@@ -12,6 +12,7 @@ import io
 import json
 import sqlite3
 import datetime
+import html
 import plotly.graph_objects as go
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as RLImage
@@ -201,14 +202,20 @@ class ExportEngine:
             spaceAfter=14
         )
 
+        safe_title = html.escape(str(session_title or "Dastaan Storybook"))
+        safe_char = html.escape(str(character.get('name', 'Hero')))
+        safe_set = html.escape(str(setting.get('name', 'Enchanted Realm')))
+
         elements = []
-        elements.append(Paragraph(f"✨ Dastaan Canvas: {session_title}", title_style))
-        elements.append(Paragraph(f"Hero: {character.get('name')} | Setting: {setting.get('name')}", sub_style))
+        elements.append(Paragraph(f"✨ Dastaan Canvas: {safe_title}", title_style))
+        elements.append(Paragraph(f"Hero: {safe_char} | Setting: {safe_set}", sub_style))
         elements.append(Spacer(1, 10))
 
-        for s in scenes:
-            elements.append(Paragraph(f"◈ {s.get('title', 'Scene')}", scene_title_style))
-            elements.append(Paragraph(s.get("narrative", ""), narrative_style))
+        for s in (scenes or []):
+            stitle = html.escape(str(s.get('title', 'Scene')))
+            snarr = html.escape(str(s.get('narrative', '')))
+            elements.append(Paragraph(f"◈ {stitle}", scene_title_style))
+            elements.append(Paragraph(snarr, narrative_style))
             elements.append(Spacer(1, 8))
 
         doc.build(elements)

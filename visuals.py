@@ -29,7 +29,7 @@ class VisualSynthesizer:
         styled specifically according to the target emotion's color palette.
         """
         try:
-            clean_prompt = prompt.replace("\n", " ").strip()
+            clean_prompt = (prompt or "enchanted cinematic world").replace("\n", " ").strip()
             encoded_prompt = urllib.parse.quote(clean_prompt)
             # High-aesthetic cinematic diffusion query
             url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=768&nologo=true&seed=42"
@@ -46,19 +46,23 @@ class VisualSynthesizer:
     def render_procedural_fallback(emotion_name: str, prompt_hint: str = "") -> Image.Image:
         """Generates a rich, dreamy procedural abstract landscape matched to the emotion."""
         w, h = 1024, 768
-        cfg = EMOTION_CONFIG.get(emotion_name, EMOTION_CONFIG["neutral"])
+        cfg = EMOTION_CONFIG.get(emotion_name or "neutral", EMOTION_CONFIG["neutral"])
         palette = cfg.get("palette", ["#1D3557", "#457B9D", "#A8DADC"])
+        if not palette or len(palette) == 0:
+            palette = ["#1D3557", "#457B9D"]
 
         # Create gradient canvas
         base = Image.new("RGB", (w, h), palette[0])
         draw = ImageDraw.Draw(base)
 
+        color_hex1 = palette[0]
+        color_hex2 = palette[1] if len(palette) > 1 else palette[0]
+
         # Draw undulating emotional waves and celestial orbs
         for i in range(h):
             factor = i / h
-            # Hex to RGB interpolation
-            c1 = tuple(int(palette[0].lstrip('#')[j:j+2], 16) for j in (0, 2, 4))
-            c2 = tuple(int(palette[1].lstrip('#')[j:j+2], 16) for j in (0, 2, 4))
+            c1 = tuple(int(color_hex1.lstrip('#')[j:j+2], 16) for j in (0, 2, 4))
+            c2 = tuple(int(color_hex2.lstrip('#')[j:j+2], 16) for j in (0, 2, 4))
             r = int(c1[0] * (1 - factor) + c2[0] * factor)
             g = int(c1[1] * (1 - factor) + c2[1] * factor)
             b = int(c1[2] * (1 - factor) + c2[2] * factor)
@@ -102,6 +106,8 @@ class MoodTransformer:
         - Warm/Cold shifts the chromatic temperature via LAB/RGB channels.
         - Calm/Chaos shifts sharpness, high-frequency edge contrast, and local turbulence.
         """
+        if image is None:
+            return None
         img_np = np.array(image.convert("RGB")).astype(np.float32)
 
         # Temperature (Warm vs Cold)
@@ -286,9 +292,16 @@ def render_live_p5_canvas(
 # =========================================================================
 def render_cinematic_scene_image(image_pil: Image.Image, caption: str, reduced_motion: bool = False):
     """Renders current scene image with a slow breathing Ken Burns animation."""
+    if image_pil is None:
+        return
     import base64
     buffered = io.BytesIO()
-    image_pil.save(buffered, format="JPEG", quality=90)
+    if image_pil.mode in ("RGBA", "LA") or (image_pil.mode == "P" and "transparency" in image_pil.info):
+        image_pil.save(buffered, format="PNG")
+        mime = "image/png"
+    else:
+        image_pil.convert("RGB").save(buffered, format="JPEG", quality=90)
+        mime = "image/jpeg"
     img_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
     animation_style = "" if reduced_motion else """
@@ -330,7 +343,7 @@ def render_cinematic_scene_image(image_pil: Image.Image, caption: str, reduced_m
       }}
     </style>
     <div class="cinematic-frame">
-      <img src="data:image/jpeg;base64,{img_b64}" class="cinematic-img" alt="{caption}" />
+      <img src="data:{mime};base64,{img_b64}" class="cinematic-img" alt="{caption}" />
       <div class="cinematic-caption">🎬 {caption}</div>
     </div>
     """

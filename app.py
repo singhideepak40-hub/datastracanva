@@ -329,35 +329,41 @@ with tab_story:
                         st.rerun()
 
     # Process text input trigger
-    if btn_trigger and story_input.strip():
-        with st.spinner("Neural Emotion Core decoding feeling & synthesizing chapter..."):
-            emo_res = EmotionEngine.analyze_text(story_input)
-            st.session_state["current_emotion_data"] = emo_res
+    if btn_trigger:
+        if story_input and story_input.strip():
+            with st.spinner("Neural Emotion Core decoding feeling & synthesizing chapter..."):
+                emo_res = EmotionEngine.analyze_text(story_input)
+                st.session_state["current_emotion_data"] = emo_res
 
-            scene_res = StoryEngine.generate_next_scene(
-                user_input=story_input,
-                detected_emotion=emo_res,
-                language=st.session_state["language"]
-            )
-            st.session_state["active_scene_data"] = scene_res
-            st.session_state["story_history"].append(scene_res)
+                scene_res = StoryEngine.generate_next_scene(
+                    user_input=story_input,
+                    detected_emotion=emo_res,
+                    language=st.session_state["language"]
+                )
+                st.session_state["active_scene_data"] = scene_res
+                st.session_state["story_history"].append(scene_res)
 
-            art_res = VisualSynthesizer.generate_scene_image(
-                scene_res["image_prompt"],
-                emotion_name=emo_res["emotion"]
-            )
-            st.session_state["active_scene_image"] = art_res
-            st.rerun()
+                art_res = VisualSynthesizer.generate_scene_image(
+                    scene_res["image_prompt"],
+                    emotion_name=emo_res["emotion"]
+                )
+                st.session_state["active_scene_image"] = art_res
+                st.rerun()
+        else:
+            st.warning("Please type a feeling or story prompt above before weaving.")
 
     st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
     # 2. Main Studio Showcase: Split into Visuals (Left) and Lore (Right)
+    cur_scene = st.session_state.get("active_scene_data", {})
+    active_img = st.session_state.get("active_scene_image")
+    active_emo_data = st.session_state.get("current_emotion_data", {"emotion": "wonder", "valence": 0.4, "arousal": 0.4})
+    cfg = EMOTION_CONFIG.get(active_emo_data.get("emotion", "wonder"), EMOTION_CONFIG["neutral"])
+
     show_left, show_right = st.columns([1.35, 1.25], gap="large")
 
     with show_left:
         st.markdown("##### 🖼️ Synthesized Scene Visual")
-        cur_scene = st.session_state.get("active_scene_data", {})
-        active_img = st.session_state.get("active_scene_image")
 
         if active_img:
             render_cinematic_scene_image(
@@ -368,7 +374,6 @@ with tab_story:
 
         st.markdown("##### 🌊 Live Emotion-Reactive Canvas")
         # Feature 11: Real-time particle physics driven by Valence & Arousal
-        active_emo_data = st.session_state.get("current_emotion_data", {"emotion": "wonder", "valence": 0.4, "arousal": 0.4})
         render_live_p5_canvas(
             valence=active_emo_data.get("valence", 0.0),
             arousal=active_emo_data.get("arousal", 0.4),
@@ -378,7 +383,6 @@ with tab_story:
         )
 
         # Feature 14: Natural Web Speech TTS & Ambient Soundscape Controller
-        cfg = EMOTION_CONFIG.get(active_emo_data.get("emotion", "wonder"), EMOTION_CONFIG["neutral"])
         AudioManager.render_audio_controller(
             narration_text=cur_scene.get("narrative", ""),
             emotion_name=active_emo_data.get("emotion", "wonder"),
@@ -457,13 +461,13 @@ with tab_cutout:
         cut_col1, cut_col2 = st.columns(2, gap="large")
         with cut_col1:
             st.markdown("##### Original Subject")
-            st.image(raw_cut_img, use_container_width=True)
+            st.image(raw_cut_img, use_column_width=True)
 
         with cut_col2:
             st.markdown("##### Isolated Studio Cutout")
             with st.spinner("Extracting foreground subject with GrabCut precision..."):
                 segmented_cutout = BackgroundRemover.remove_background(raw_cut_img)
-                st.image(segmented_cutout, use_container_width=True)
+                st.image(segmented_cutout, use_column_width=True)
 
                 # Download PNG button
                 buf = io.BytesIO()
@@ -519,7 +523,7 @@ with tab_mood:
             if warm_val != 0.0 or energy_val != 0.0:
                 preview_img = MoodTransformer.transform_image(preview_img, warm_val, energy_val)
 
-            st.image(preview_img, use_container_width=True)
+            st.image(preview_img, use_column_width=True)
 
             if apply_btn:
                 st.session_state["active_scene_image"] = preview_img

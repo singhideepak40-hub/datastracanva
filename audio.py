@@ -24,10 +24,12 @@ class AudioManager:
         shift from melancholic minor rain drones to sparkling celestial major chords.
         """
         clean_narration = (
-            narration_text
+            (narration_text or "")
+            .replace('\\', '\\\\')
             .replace('"', '\\"')
             .replace("'", "\\'")
             .replace("\n", " ")
+            .replace("\r", " ")
         )
 
         lang_code = "en-US"

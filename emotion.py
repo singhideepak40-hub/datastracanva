@@ -189,7 +189,7 @@ class WebcamEmotionAnalyzer:
                 import io
                 import base64
                 buffered = io.BytesIO()
-                image.save(buffered, format="JPEG", quality=85)
+                image.convert("RGB").save(buffered, format="JPEG", quality=85)
                 img_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
                 headers = {"Content-Type": "application/json"}
@@ -254,7 +254,7 @@ class ImageVisionAnalyzer:
                 import io
                 import base64
                 buffered = io.BytesIO()
-                image.save(buffered, format="JPEG", quality=85)
+                image.convert("RGB").save(buffered, format="JPEG", quality=85)
                 img_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
                 headers = {"Content-Type": "application/json"}
