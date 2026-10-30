@@ -29,6 +29,7 @@ from audio import AudioManager
 from src.background_remover import BackgroundRemover
 from src.feature_engineering import FeatureEngineer
 from src.model_engine import ModelEngine
+from src.image_generator import ImageGenerator
 
 # =========================================================================
 # PAGE SETUP & POKECUT STUDIO DARK THEME
@@ -208,10 +209,11 @@ st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
 
 # =========================================================================
-# THE 4 DEDICATED STUDIO TABS
+# THE 5 DEDICATED STUDIO TABS
 # =========================================================================
-tab_vision, tab_enhancer, tab_studio, tab_transformer = st.tabs([
+tab_vision, tab_generator, tab_enhancer, tab_studio, tab_transformer = st.tabs([
     "🔮 Vision Context & Storyteller",
+    "🎨 AI Image Generator",
     "🪄 Prompt Image Enhancer",
     "✂️ Magic Studio Cutout",
     "🎚️ Mood & Style Transformer"
@@ -295,6 +297,68 @@ with tab_vision:
             sound_type=cfg.get("ambient_sound_type", "forest_breeze"),
             language=selected_language
         )
+
+
+# =========================================================================
+# TAB 2: AI IMAGE GENERATOR (Text-to-Image Masterpiece Synthesis)
+# =========================================================================
+with tab_generator:
+    st.markdown("#### 🎨 AI Image Generator")
+    st.caption("Synthesize original, watermark-free high-resolution artwork from pure text prompts.")
+
+    gen_col1, gen_col2 = st.columns([1, 1], gap="large")
+
+    with gen_col1:
+        st.markdown("##### Prompt Studio")
+        prompt_text = st.text_area(
+            "Enter your imaginative vision:",
+            value="The Taj Mahal at breathtaking sunset, golden hour lighting reflecting off white marble and reflecting pool, highly detailed 8k photography",
+            height=100,
+            key="input_gen_prompt"
+        )
+
+        use_neural_elevation = st.checkbox(
+            "⚡ Neural Prompt Elevation (Enrich with in-house LLM for cinematic lighting & octane details)",
+            value=True,
+            key="cb_neural_elevation"
+        )
+
+        btn_generate = st.button("✨ Synthesize Masterpiece", key="btn_run_text2img")
+
+    with gen_col2:
+        st.markdown("##### Synthesized Masterpiece")
+        if btn_generate:
+            if prompt_text.strip():
+                with st.spinner("Neural Vision Engine synthesizing high-definition artwork..."):
+                    gen_img = ImageGenerator.generate_from_prompt(prompt_text, enrich=use_neural_elevation)
+                    st.session_state["generated_art"] = gen_img
+                    st.session_state["generated_prompt_text"] = prompt_text
+                    st.toast("Synthesized masterpiece!", icon="🎨")
+            else:
+                st.warning("Please type a prompt on the left to generate art.")
+
+        displayed_art = st.session_state.get("generated_art")
+        if displayed_art:
+            st.image(displayed_art, use_column_width=True)
+            st.caption(f"Prompt: {st.session_state.get('generated_prompt_text', prompt_text)}")
+
+            b_col1, b_col2 = st.columns(2)
+            with b_col1:
+                buf = io.BytesIO()
+                displayed_art.save(buf, format="PNG")
+                st.download_button(
+                    label="⬇️ Download Art (PNG)",
+                    data=buf.getvalue(),
+                    file_name="ai_synthesized_masterpiece.png",
+                    mime="image/png"
+                )
+            with b_col2:
+                if st.button("📥 Send to Studio Canvas", key="btn_send_to_canvas"):
+                    st.session_state["current_image"] = displayed_art
+                    st.toast("Loaded as active canvas for Cutout, Mood & Vision Lore!", icon="📥")
+                    st.rerun()
+        else:
+            st.info("👈 Enter a prompt on the left and click **Synthesize Masterpiece** to create art here.")
 
 
 # =========================================================================

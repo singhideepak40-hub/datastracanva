@@ -1,18 +1,56 @@
 import requests
 import io
-from PIL import Image
 import urllib.parse
+from PIL import Image
+from emotion import get_api_key, CANDIDATE_MODELS
+from visuals import VisualSynthesizer
 
 class ImageGenerator:
     @staticmethod
-    def generate_from_prompt(prompt: str) -> Image.Image:
+    def enrich_prompt_with_llm(user_prompt: str) -> str:
+        """Uses neural intelligence to elevate user prompt into cinematic 8k detail."""
+        api_key = get_api_key()
+        if not api_key:
+            return user_prompt
+
         try:
-            encoded_prompt = urllib.parse.quote(prompt)
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-lite-latest:generateContent?key={api_key}"
+            instruction = (
+                "You are an expert AI prompt engineer and cinematographer. "
+                "Take this short image prompt and rewrite it into a single highly-detailed, stunning artistic prompt "
+                "(around 35-50 words) specifying lighting, mood, camera framing, texture, and 8k detail. "
+                "Respond with ONLY the expanded prompt text, nothing else.\n\n"
+                f"User Prompt: {user_prompt}"
+            )
+            payload = {
+                "contents": [{"parts": [{"text": instruction}]}],
+                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 100}
+            }
+            res = requests.post(url, json=payload, timeout=6)
+            if res.status_code == 200:
+                expanded = res.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+                if len(expanded) > 10:
+                    return expanded
+        except Exception:
+            pass
+
+        return user_prompt
+
+    @staticmethod
+    def generate_from_prompt(prompt: str, enrich: bool = True) -> Image.Image:
+        """Generates high-definition artwork without any watermarks or third-party branding."""
+        final_prompt = prompt
+        if enrich:
+            final_prompt = ImageGenerator.enrich_prompt_with_llm(prompt)
+
+        try:
+            encoded_prompt = urllib.parse.quote(final_prompt.replace("\n", " ").strip())
             url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
-            response = requests.get(url, timeout=30)
+            response = requests.get(url, timeout=25)
             if response.status_code == 200:
                 return Image.open(io.BytesIO(response.content)).convert("RGB")
         except Exception:
             pass
-        # Fallback placeholder
-        return Image.new("RGB", (800, 800), (40, 40, 60))
+
+        # Generative procedural fallback if offline or timed out
+        return VisualSynthesizer.render_procedural_fallback("wonder", prompt)
