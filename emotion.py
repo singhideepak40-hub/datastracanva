@@ -80,7 +80,7 @@ class EmotionEngine:
                 last_err = str(e)
                 continue
 
-        raise RuntimeError(f"All Gemini models failed: {last_err}")
+        raise RuntimeError(f"All neural models failed: {last_err}")
 
     @staticmethod
     def _rule_based_fallback(text: str) -> dict:
