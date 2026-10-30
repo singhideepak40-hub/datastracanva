@@ -10,7 +10,7 @@ import re
 import requests
 import streamlit as st
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter, ImageOps
 
 # Central emotion mapping config loader
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config", "emotion_map.json")
@@ -240,13 +240,15 @@ class WebcamEmotionAnalyzer:
 
 
 # =========================================================================
-# FEATURE 4: Image Upload Vision Mood Analysis
+# FEATURE 4: Deep Image Vision Analysis (Context, Mood, Conveying & Story)
 # =========================================================================
 class ImageVisionAnalyzer:
     @staticmethod
-    def analyze_uploaded_image(image: Image.Image) -> dict:
+    def analyze_uploaded_image(image: Image.Image, language: str = "Hinglish") -> dict:
         """
-        Multimodal LLM vision analysis: extracts subject, color palette, and emotional ambiance.
+        Multimodal neural vision analysis:
+        Extracts Context (what is in the image), Mood (atmosphere),
+        Conveying (what the image communicates), and writes a Living Story.
         """
         api_key = get_api_key()
         if api_key:
@@ -258,15 +260,38 @@ class ImageVisionAnalyzer:
                 img_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
                 headers = {"Content-Type": "application/json"}
+                prompt_text = f"""
+Examine this photograph or artwork deeply as a senior art director and master visual storyteller.
+Language: {language} (Provide context, mood, conveying, and story in {language}).
+
+Analyze the following:
+1. Context: What is happening in this image? Describe the setting, characters/subjects, physical elements, and lighting.
+2. Mood: What is the exact emotional atmosphere and psychological tone?
+3. What is it conveying? What message, deeper feeling, or idea is this image communicating to the viewer?
+4. Story / Lore: Write a captivating, cinematic story (2 to 3 paragraphs) inspired directly by this image.
+5. Title: A poetic, cinematic title.
+
+Output ONLY valid JSON matching this schema:
+{{
+  "title": "A poetic title in {language}",
+  "context": "Clear explanation of what the image shows in {language}",
+  "mood": "Detailed mood & emotional atmosphere in {language}",
+  "conveying": "What the image is expressing / message in {language}",
+  "story": "Cinematic narrative text in {language}",
+  "emotion": "string (strictly one of: joy, sadness, serenity, wonder, anger, nostalgia, neutral)",
+  "valence": float between -1.0 and 1.0,
+  "arousal": float between 0.0 and 1.0,
+  "keywords": ["key", "visual", "elements"]
+}}
+"""
                 payload = {
                     "contents": [{
                         "parts": [
-                            {"text": "Examine this artwork/photograph as a senior art director. Describe the mood, color palette, subject, and story atmosphere. "
-                                     "Output ONLY JSON: {\"emotion\": string (one of joy, sadness, serenity, wonder, anger, nostalgia, fear, neutral), \"valence\": float (-1.0 to 1.0), \"arousal\": float (0.0 to 1.0), \"intensity\": float (0.0 to 1.0), \"palette_summary\": string, \"subject\": string, \"keywords\": [string], \"reasoning\": string}"},
+                            {"text": prompt_text},
                             {"inline_data": {"mime_type": "image/jpeg", "data": img_b64}}
                         ]
                     }],
-                    "generationConfig": {"temperature": 0.2, "response_mime_type": "application/json"}
+                    "generationConfig": {"temperature": 0.4, "response_mime_type": "application/json"}
                 }
 
                 for m in CANDIDATE_MODELS:
@@ -276,7 +301,10 @@ class ImageVisionAnalyzer:
                         if res.status_code == 200:
                             raw_text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
                             cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
-                            return json.loads(cleaned)
+                            data = json.loads(cleaned)
+                            if data.get("emotion") not in EMOTION_CONFIG:
+                                data["emotion"] = "wonder"
+                            return data
                     except Exception:
                         continue
             except Exception:
@@ -291,21 +319,105 @@ class ImageVisionAnalyzer:
 
         if saturation > 125:
             emotion = "joy"
+            m_desc = "Vibrant, full of energy and rich chromatic life."
+            c_desc = "Expresses celebration, vitality, and vivid wonder."
         elif brightness < 80:
             emotion = "sadness"
+            m_desc = "Moody, shadowed, and contemplative."
+            c_desc = "Conveys quiet introspection, mystery, and nocturnal echoes."
         elif saturation < 60:
             emotion = "nostalgia"
+            m_desc = "Gentle, nostalgic, and warm."
+            c_desc = "Conveys timeless memory and peaceful reminiscence."
         else:
             emotion = "serenity"
+            m_desc = "Harmonious, calm, and grounded."
+            c_desc = "Expresses natural balance and tranquil stillness."
 
         cfg = EMOTION_CONFIG.get(emotion, EMOTION_CONFIG["neutral"])
         return {
+            "title": f"The Echo of {emotion.capitalize()}",
+            "context": f"Captured visual composition with Luminance of {brightness:.1f} and Chromatic Saturation of {saturation:.1f}.",
+            "mood": m_desc,
+            "conveying": c_desc,
+            "story": (
+                "Every image holds an unspoken universe. Looking closer into this frame, shadows weave together with light "
+                "to preserve a singular fleeting moment in time. What began as a visual snapshot now unfolds into an enduring tale "
+                "of emotion and atmosphere, resonating with the quiet heartbeat of its creator."
+            ),
             "emotion": emotion,
             "valence": cfg["valence"],
             "arousal": cfg["arousal"],
-            "intensity": 0.6,
-            "palette_summary": f"Chromatic Saturation: {saturation:.1f}, Luminance: {brightness:.1f}",
-            "subject": "Captured visual canvas",
-            "keywords": ["chroma", "light", "atmosphere"],
-            "reasoning": f"Optical spectrum extraction: Saturation {saturation:.1f} and Luminance {brightness:.1f} indicate a {emotion} atmosphere."
+            "keywords": ["light", "composition", "shadow", "atmosphere"]
+        }
+
+
+# =========================================================================
+# FEATURE: Prompt-Based Image Enhancer (Transform Existing Uploaded Image)
+# =========================================================================
+class PromptImageEnhancer:
+    @staticmethod
+    def enhance_image_with_prompt(image: Image.Image, user_prompt: str) -> dict:
+        """
+        Enhances and transforms the EXACT existing uploaded image based on user's instruction.
+        Adjusts temperature, contrast, saturation, sharpness, and dynamic color grading.
+        """
+        p = user_prompt.lower()
+        img = image.convert("RGB")
+        img_np = np.array(img).astype(np.float32)
+
+        # 1. Temperature Analysis (Warm / Sunset vs Cyberpunk / Cold)
+        is_sunset = any(w in p for w in ["sunset", "golden", "warm", "amber", "sunlight", "dhoop"])
+        is_cyberpunk = any(w in p for w in ["cyberpunk", "neon", "electric", "night", "futuristic"])
+        is_noir = any(w in p for w in ["noir", "black and white", "monochrome", "vintage", "retro", "dark"])
+        is_vibrant = any(w in p for w in ["vibrant", "color", "boost", "punchy", "colorful", "bright", "rich"])
+        is_sharp = any(w in p for w in ["sharp", "detail", "clear", "clarity", "hd", "4k", "8k", "focus"])
+        is_cinematic = any(w in p for w in ["cinematic", "movie", "teal", "orange", "dramatic"])
+
+        changes_applied = []
+
+        if is_noir:
+            img = ImageOps.grayscale(img).convert("RGB")
+            img = ImageEnhance.Contrast(img).enhance(1.4)
+            changes_applied.append("Black & white film noir contrast grading")
+
+        elif is_sunset:
+            img_np[:, :, 0] = np.clip(img_np[:, :, 0] * 1.25 + 20, 0, 255)  # Warm reds
+            img_np[:, :, 1] = np.clip(img_np[:, :, 1] * 1.10 + 10, 0, 255)  # Amber gold
+            img_np[:, :, 2] = np.clip(img_np[:, :, 2] * 0.85 - 15, 0, 255)  # Soft blues
+            img = Image.fromarray(img_np.astype(np.uint8))
+            img = ImageEnhance.Color(img).enhance(1.3)
+            changes_applied.append("Golden hour sunset lighting & amber warmth")
+
+        elif is_cyberpunk:
+            img_np[:, :, 0] = np.clip(img_np[:, :, 0] * 1.20 + 25, 0, 255)  # Magenta
+            img_np[:, :, 2] = np.clip(img_np[:, :, 2] * 1.30 + 30, 0, 255)  # Electric Blue
+            img = Image.fromarray(img_np.astype(np.uint8))
+            img = ImageEnhance.Contrast(img).enhance(1.3)
+            img = ImageEnhance.Color(img).enhance(1.4)
+            changes_applied.append("Cyberpunk neon color matrix & amplified shadows")
+
+        elif is_cinematic:
+            img_np[:, :, 0] = np.clip(img_np[:, :, 0] * 1.15 + 10, 0, 255)
+            img_np[:, :, 2] = np.clip(img_np[:, :, 2] * 0.90 + 15, 0, 255)
+            img = Image.fromarray(img_np.astype(np.uint8))
+            img = ImageEnhance.Contrast(img).enhance(1.25)
+            changes_applied.append("Cinematic color timing & depth enhancement")
+
+        if is_vibrant:
+            img = ImageEnhance.Color(img).enhance(1.4)
+            changes_applied.append("Chromatic saturation boost")
+
+        if is_sharp or True:  # Default to detail enhancement
+            img = img.filter(ImageFilter.SHARPEN)
+            changes_applied.append("Edge definition & texture sharpening")
+
+        # Slight contrast lift
+        img = ImageEnhance.Contrast(img).enhance(1.15)
+
+        summary = "Enhanced with: " + ", ".join(changes_applied) if changes_applied else f"Enhanced based on prompt: '{user_prompt}'"
+
+        return {
+            "enhanced_image": img,
+            "summary": summary
         }

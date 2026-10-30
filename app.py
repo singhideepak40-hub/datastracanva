@@ -1,25 +1,21 @@
 """
 ================================================================================
-✨ DASTAAN CANVAS | Advanced AI Visual System & Story Studio ✨
+✨ DASTAAN CANVAS | Intelligent Visual System & Story Studio ✨
 ================================================================================
-A high-aesthetic, intelligent visual platform uniting Pokecut's studio precision
-with the cinematic emotional storytelling wonder of animated cinema.
+A high-aesthetic creative platform combining Pokecut's studio precision
+with deep multimodal image storytelling and prompt-guided image enhancement.
 
-Proprietary In-House Neural Architecture:
-- Cognitive Emotion Engine (Continuous Valence & Arousal Mapping)
-- Dynamic Reactive Flow Canvas (Real-time particle physics driven by sentiment)
-- Scene-by-Scene Branching Story Engine with Persistent Character Lock
-- Studio Subject Cutout & Background Isolation (GrabCut Segmentation)
-- Optical Mood & Style Color Grading Pipeline
-- Ambient Audio Synthesizer & Natural Speech Narration
-- Interactive Emotional Journey Arc & Illustrated Storybook PDF Export
+Core Capabilities:
+1. 🔮 Vision Context & Storyteller: Deep context, mood, conveying message & living story
+2. 🪄 Prompt Image Enhancer: Transform and enhance the EXACT uploaded image based on prompts
+3. ✂️ Magic Studio Cutout: Subject isolation, transparent PNG, DSLR bokeh blur & custom backdrops
+4. 🎚️ Mood & Style Transformer: Optical temperature grading & 6 cinematic artistic filters
 ================================================================================
 """
 
 import os
 import sys
 import io
-import json
 import streamlit as st
 import numpy as np
 from PIL import Image
@@ -27,17 +23,15 @@ from PIL import Image
 # Workspace imports
 sys.path.insert(0, os.path.dirname(__file__))
 
-from emotion import EmotionEngine, WebcamEmotionAnalyzer, ImageVisionAnalyzer, EMOTION_CONFIG
-from story import StoryEngine, DEFAULT_CHARACTERS, DEFAULT_SETTINGS
-from visuals import VisualSynthesizer, MoodTransformer, render_live_p5_canvas, render_cinematic_scene_image
+from emotion import ImageVisionAnalyzer, PromptImageEnhancer, EMOTION_CONFIG
+from visuals import VisualSynthesizer, MoodTransformer
 from audio import AudioManager
-from storage import MemoryStore, TimelineVisualizer, ExportEngine
 from src.background_remover import BackgroundRemover
 from src.feature_engineering import FeatureEngineer
 from src.model_engine import ModelEngine
 
 # =========================================================================
-# PAGE SETUP & POKECUT STUDIO DARK GLASSMORPHISM
+# PAGE SETUP & POKECUT STUDIO DARK THEME
 # =========================================================================
 st.set_page_config(
     page_title="Dastaan Canvas | AI Creative Studio",
@@ -46,19 +40,18 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Polished, Non-cluttered Studio CSS
 st.markdown("""
 <style>
-    /* Dark Studio Background */
+    /* Dark Obsidian Background */
     .stApp {
-        background-color: #0B0E14;
+        background-color: #0A0D14;
         color: #F0F6FC;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
-    /* Clean Tabs Styling */
+    /* Tab Design */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 12px;
+        gap: 10px;
         background-color: rgba(18, 24, 38, 0.7);
         padding: 8px 12px;
         border-radius: 14px;
@@ -81,62 +74,56 @@ st.markdown("""
         box-shadow: 0 4px 14px rgba(31, 111, 235, 0.35);
     }
 
-    /* Studio Card */
-    .studio-panel {
-        background: rgba(16, 21, 32, 0.8);
+    /* Highlight Pill Card */
+    .info-card {
+        background: rgba(18, 24, 38, 0.75);
         border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 16px;
-        padding: 20px;
-        margin-bottom: 16px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin-bottom: 14px;
     }
-
-    /* Live Emotional Badge */
-    .neural-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        border-radius: 20px;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-        background: rgba(88, 166, 255, 0.12);
-        border: 1px solid rgba(88, 166, 255, 0.3);
+    .info-card h4 {
+        margin: 0 0 8px 0;
+        font-size: 15px;
+        font-weight: 600;
         color: #58A6FF;
     }
+    .info-card p {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #C9D1D9;
+    }
 
-    /* Branching Story Action Buttons */
+    /* Story Card */
+    .story-frame {
+        background: rgba(22, 29, 44, 0.85);
+        border-left: 4px solid #58A6FF;
+        padding: 20px;
+        border-radius: 0 14px 14px 0;
+        font-size: 15px;
+        line-height: 1.7;
+        color: #E6EDF3;
+        margin-top: 10px;
+        margin-bottom: 16px;
+    }
+
+    /* Action Buttons */
     .stButton>button {
         width: 100%;
         border-radius: 12px;
         border: 1px solid rgba(255, 255, 255, 0.12);
         background: linear-gradient(180deg, #1A2333 0%, #121824 100%);
         color: #E6EDF3;
-        font-weight: 500;
-        padding: 10px 16px;
+        font-weight: 600;
+        padding: 10px 18px;
         transition: all 0.2s ease;
-        text-align: left;
     }
     .stButton>button:hover {
         border-color: #58A6FF;
         background: linear-gradient(180deg, #25334D 0%, #182234 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
         color: #FFFFFF;
-    }
-
-    /* Story Text Frame */
-    .story-card {
-        background: rgba(22, 28, 42, 0.85);
-        border-left: 4px solid #58A6FF;
-        padding: 18px 20px;
-        border-radius: 0 14px 14px 0;
-        font-size: 15px;
-        line-height: 1.7;
-        color: #E6EDF3;
-        margin-bottom: 18px;
+        box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -145,444 +132,337 @@ st.markdown("""
 # =========================================================================
 # SESSION STATE INITIALIZATION
 # =========================================================================
-StoryEngine.initialize_story_state()
+if "current_image" not in st.session_state:
+    # Default evocative starting canvas so the app is never empty
+    st.session_state["current_image"] = VisualSynthesizer.render_procedural_fallback("wonder")
 
-if "current_emotion_data" not in st.session_state:
-    st.session_state["current_emotion_data"] = {
+if "vision_insights" not in st.session_state:
+    st.session_state["vision_insights"] = {
+        "title": "The Awakening of Twilight Horizon",
+        "context": "A serene celestial landscape with undulating harmonic waves, starlight points, and deep indigo twilight.",
+        "mood": "Calm, mystical, and filled with contemplative wonder.",
+        "conveying": "Expresses the vastness of human imagination and the quiet beauty before dawn.",
+        "story": (
+            "Beneath an obsidian sky bathed in sapphire light, time ceases to rush. "
+            "Every ripple on the canvas holds the memory of an unspoken wish, glowing softly "
+            "like embers in the quiet hours. In this stillness, a new world begins to stir."
+        ),
         "emotion": "wonder",
-        "valence": 0.4,
-        "arousal": 0.4,
-        "intensity": 0.5,
-        "keywords": ["idle", "breathing"],
-        "reasoning": "Proprietary Neural Engine in gentle harmonic equilibrium."
-    }
-
-if "active_scene_image" not in st.session_state:
-    st.session_state["active_scene_image"] = VisualSynthesizer.render_procedural_fallback("wonder")
-
-if "active_scene_data" not in st.session_state:
-    st.session_state["active_scene_data"] = {
-        "scene_number": 0,
-        "title": "Prologue: Awakening the Living Canvas",
-        "narrative": "Welcome to Dastaan Canvas. The visual system is currently breathing in serene equilibrium. Express your feeling or upload a memory to weave an evolving cinematic tale.",
-        "image_prompt": "Cinematic 3D animation still in beloved animated toy story aesthetic. A clockwork mechanical sparrow resting on a sunlit antique windowsill with floating amber dust motes.",
-        "branching_choices": [
-            "Whisper a tender forgotten memory",
-            "Ignite a blazing spark of adventure",
-            "Listen quietly to the breathing twilight"
-        ],
-        "why_this_image": "Idle equilibrium: balanced golden hour lighting and harmonious gentle particle drift.",
-        "emotion": "wonder",
-        "valence": 0.4,
-        "arousal": 0.4
+        "valence": 0.6,
+        "arousal": 0.3
     }
 
 
 # =========================================================================
-# HEADER & NEURAL PULSE STATUS
+# HEADER & GLOBAL CANVAS UPLOADER
 # =========================================================================
-top_col1, top_col2 = st.columns([3, 1.2])
+head_col1, head_col2 = st.columns([3, 1])
 
-with top_col1:
+with head_col1:
     st.markdown("## ✨ Dastaan Canvas")
     st.markdown(
         "<p style='color: #8B949E; margin-top: -14px; font-size: 14px;'>"
-        "Next-Generation AI Creative Studio: <b>Art that feels your emotion</b> and unfolds scene by scene."
+        "Studio Visual Intelligence: <b>Deep Image Lore & Context</b> + <b>Prompt-Guided Image Enhancement</b>"
         "</p>",
         unsafe_allow_html=True
     )
 
-with top_col2:
-    cur_emo_data = st.session_state.get("current_emotion_data", {"emotion": "wonder", "valence": 0.4, "arousal": 0.4})
-    cur_emo = cur_emo_data.get("emotion", "wonder")
-    cfg = EMOTION_CONFIG.get(cur_emo, EMOTION_CONFIG["neutral"])
-    glow_col = cfg.get("glow_color", "#58A6FF")
-    st.markdown(
-        f"""
-        <div style="text-align: right; margin-top: 4px;">
-          <span class="neural-badge" style="border-color: {glow_col}; color: {glow_col};">
-            ● {cur_emo.upper()} STATE
-          </span>
-          <div style="font-size: 11px; color: #8B949E; margin-top: 4px;">
-            Valence: {cur_emo_data.get('valence', 0.0):+.2f} | Arousal: {cur_emo_data.get('arousal', 0.4):.2f}
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-# =========================================================================
-# CLEAN SIDEBAR CONTROLS (Hero Archetype, Language, Accessibility)
-# =========================================================================
-with st.sidebar:
-    st.markdown("### ⚙️ Studio Configuration")
-    
-    # Language Selection (Feature 8)
-    selected_lang = st.selectbox(
-        "🌐 Narration & Lore Language",
-        ["English", "Hindi", "Hinglish"],
-        index=["English", "Hindi", "Hinglish"].index(st.session_state.get("language", "English"))
-    )
-    st.session_state["language"] = selected_lang
-
-    # Hero Archetype Lock (Feature 7)
-    st.markdown("##### 🧸 Hero Character Lock")
-    char_names = [f"{c['avatar']} {c['name']}" for c in DEFAULT_CHARACTERS]
-    chosen_char_idx = st.selectbox(
-        "Locked Hero",
-        range(len(DEFAULT_CHARACTERS)),
-        format_func=lambda i: char_names[i],
+with head_col2:
+    selected_language = st.selectbox(
+        "🌐 Story Language",
+        ["Hinglish", "Hindi", "English"],
         index=0,
-        label_visibility="collapsed"
+        help="Language used for context analysis and storytelling."
     )
-    st.session_state["character"] = DEFAULT_CHARACTERS[chosen_char_idx]
 
-    # Setting Lock
-    st.markdown("##### 🏰 Realm Setting")
-    set_names = [s['name'] for s in DEFAULT_SETTINGS]
-    chosen_set_idx = st.selectbox(
-        "Locked Setting",
-        range(len(DEFAULT_SETTINGS)),
-        format_func=lambda i: set_names[i],
-        index=0,
-        label_visibility="collapsed"
+# Unified Studio Image Uploader (Controls all tabs)
+upload_col1, upload_col2 = st.columns([2.5, 1], gap="medium")
+
+with upload_col1:
+    uploaded_file = st.file_uploader(
+        "📸 Upload Any Image (PNG, JPG, WEBP) to Analyze, Enhance & Transform across all Studio Tools:",
+        type=["png", "jpg", "jpeg", "webp"],
+        key="master_uploader"
     )
-    st.session_state["setting"] = DEFAULT_SETTINGS[chosen_set_idx]
+    if uploaded_file is not None:
+        try:
+            uploaded_img = Image.open(uploaded_file)
+            st.session_state["current_image"] = uploaded_img
+        except Exception as e:
+            st.error(f"Error loading image: {e}")
 
-    # Accessibility & Quality Polish (Feature 20)
-    st.markdown("---")
-    reduced_motion = st.toggle("Reduced Motion (gentle particles)", value=False)
-    st.caption("Engine: Proprietary Neural Vision Core v2.4")
-
-
-# =========================================================================
-# MAIN APP TABS: CLEAR, INTUITIVE & ELEGANT
-# =========================================================================
-tab_story, tab_cutout, tab_mood, tab_journey = st.tabs([
-    "🎨 Living Canvas & Story Studio",
-    "✂️ Magic Studio Cutout",
-    "🎚️ Mood & Style Transformer",
-    "📈 Emotional Journey & Lore PDF"
-])
-
-
-# =========================================================================
-# TAB 1: LIVING CANVAS & STORY STUDIO (The Star Multimodal Experience)
-# =========================================================================
-with tab_story:
-    # 1. Clean Input Section
-    input_box_col1, input_box_col2 = st.columns([3, 1], gap="medium")
-
-    with input_box_col1:
-        story_input = st.text_input(
-            "What feeling or vision shall awaken the canvas?",
-            placeholder="e.g. Aaj dil thoda udaas hai, purani yaadein aur thandi baarish yaad aa rahi hai... / Golden sunshine bursting through the attic!",
-            label_visibility="collapsed"
-        )
-
-    with input_box_col2:
-        btn_trigger = st.button("✨ Weave Scene & Evolve Art", key="btn_main_trigger")
-
-    # Optional Multimodal Quick Triggers (Expandable only if user wants)
-    with st.expander("📷 / 🎙️ / 🖼️ Camera, Voice & Vision Input (Optional)", expanded=False):
-        mm_col1, mm_col2 = st.columns(2)
-        with mm_col1:
-            st.markdown("###### 🖼️ Vision Image Analysis")
-            ref_img = st.file_uploader("Upload reference photo to analyze mood", type=["jpg", "png", "jpeg"], key="story_vision_up")
-            if ref_img and st.button("🔮 Extract Mood from Image"):
-                with st.spinner("Neural Vision analyzing palette & atmosphere..."):
-                    pil_ref = Image.open(ref_img)
-                    v_res = ImageVisionAnalyzer.analyze_uploaded_image(pil_ref)
-                    st.session_state["current_emotion_data"] = v_res
-                    next_scene = StoryEngine.generate_next_scene(
-                        user_input=f"Uploaded visual depicting {v_res.get('subject', 'a memory')}",
-                        detected_emotion=v_res,
-                        language=st.session_state["language"]
-                    )
-                    st.session_state["active_scene_data"] = next_scene
-                    st.session_state["story_history"].append(next_scene)
-                    st.session_state["active_scene_image"] = VisualSynthesizer.generate_scene_image(
-                        next_scene["image_prompt"], emotion_name=v_res["emotion"]
-                    )
-                    st.rerun()
-
-        with mm_col2:
-            st.markdown("###### 📷 Facial Mood Detection")
-            cam_consent = st.checkbox("Enable In-Memory Optical Mood Sensing", value=False)
-            if cam_consent:
-                cam_snap = st.camera_input("Express mood to camera", key="story_cam")
-                if cam_snap and st.button("⚡ Read Face & Evolve"):
-                    with st.spinner("Analyzing facial cues..."):
-                        c_res = WebcamEmotionAnalyzer.analyze_frame(Image.open(cam_snap))
-                        st.session_state["current_emotion_data"] = c_res
-                        next_scene = StoryEngine.generate_next_scene(
-                            user_input="Camera sensed facial emotional state",
-                            detected_emotion=c_res,
-                            language=st.session_state["language"]
-                        )
-                        st.session_state["active_scene_data"] = next_scene
-                        st.session_state["story_history"].append(next_scene)
-                        st.session_state["active_scene_image"] = VisualSynthesizer.generate_scene_image(
-                            next_scene["image_prompt"], emotion_name=c_res["emotion"]
-                        )
-                        st.rerun()
-
-    # Process text input trigger
-    if btn_trigger:
-        if story_input and story_input.strip():
-            with st.spinner("Neural Emotion Core decoding feeling & synthesizing chapter..."):
-                emo_res = EmotionEngine.analyze_text(story_input)
-                st.session_state["current_emotion_data"] = emo_res
-
-                scene_res = StoryEngine.generate_next_scene(
-                    user_input=story_input,
-                    detected_emotion=emo_res,
-                    language=st.session_state["language"]
-                )
-                st.session_state["active_scene_data"] = scene_res
-                st.session_state["story_history"].append(scene_res)
-
-                art_res = VisualSynthesizer.generate_scene_image(
-                    scene_res["image_prompt"],
-                    emotion_name=emo_res["emotion"]
-                )
-                st.session_state["active_scene_image"] = art_res
-                st.rerun()
-        else:
-            st.warning("Please type a feeling or story prompt above before weaving.")
-
-    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
-
-    # 2. Main Studio Showcase: Split into Visuals (Left) and Lore (Right)
-    cur_scene = st.session_state.get("active_scene_data", {})
-    active_img = st.session_state.get("active_scene_image")
-    active_emo_data = st.session_state.get("current_emotion_data", {"emotion": "wonder", "valence": 0.4, "arousal": 0.4})
-    cfg = EMOTION_CONFIG.get(active_emo_data.get("emotion", "wonder"), EMOTION_CONFIG["neutral"])
-
-    show_left, show_right = st.columns([1.35, 1.25], gap="large")
-
-    with show_left:
-        st.markdown("##### 🖼️ Synthesized Scene Visual")
-
-        if active_img:
-            render_cinematic_scene_image(
-                active_img,
-                caption=f"Scene {cur_scene.get('scene_number', 0)}: {cur_scene.get('title', 'Prologue')}",
-                reduced_motion=reduced_motion
-            )
-
-        st.markdown("##### 🌊 Live Emotion-Reactive Canvas")
-        # Feature 11: Real-time particle physics driven by Valence & Arousal
-        render_live_p5_canvas(
-            valence=active_emo_data.get("valence", 0.0),
-            arousal=active_emo_data.get("arousal", 0.4),
-            emotion_name=active_emo_data.get("emotion", "wonder"),
-            height=220,
-            reduced_motion=reduced_motion
-        )
-
-        # Feature 14: Natural Web Speech TTS & Ambient Soundscape Controller
-        AudioManager.render_audio_controller(
-            narration_text=cur_scene.get("narrative", ""),
-            emotion_name=active_emo_data.get("emotion", "wonder"),
-            sound_type=cfg.get("ambient_sound_type", "forest_breeze"),
-            language=st.session_state.get("language", "English")
-        )
-
-    with show_right:
-        st.markdown(f"### {cur_scene.get('title', 'Prologue')}")
-        
-        # Story Card Display
+with upload_col2:
+    if st.session_state.get("current_image") is not None:
+        feats = FeatureEngineer.extract_visual_features(st.session_state["current_image"])
         st.markdown(
             f"""
-            <div class="story-card" style="border-left-color: {cfg.get('glow_color', '#58A6FF')};">
-              {cur_scene.get('narrative', '')}
+            <div style="background: rgba(18, 24, 38, 0.6); padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px; margin-top: 24px;">
+              <span style="color: #58A6FF; font-weight: bold;">📊 Spectrum:</span> 
+              Bright: <b>{feats['brightness']:.0f}</b> | Sat: <b>{feats['saturation']:.0f}</b> | Detail: <b>{feats['edge_density']:.0f}%</b>
             </div>
             """,
             unsafe_allow_html=True
         )
 
-        # Feature 6: Interactive Branching Choices
-        st.markdown("##### 🔀 Steer the Next Scene:")
-        choices = cur_scene.get("branching_choices", [
-            "Continue exploring forward",
-            "Reflect in quiet thought"
-        ])
-
-        for idx, choice in enumerate(choices):
-            if st.button(f"👉 {choice}", key=f"tab_choice_{idx}"):
-                with st.spinner("Weaving the chapter of your choice..."):
-                    next_s = StoryEngine.generate_next_scene(
-                        user_input=choice,
-                        detected_emotion=st.session_state.get("current_emotion_data", {}),
-                        chosen_branch=choice,
-                        language=st.session_state.get("language", "English")
-                    )
-                    st.session_state["active_scene_data"] = next_s
-                    st.session_state["story_history"].append(next_s)
-
-                    next_art = VisualSynthesizer.generate_scene_image(
-                        next_s["image_prompt"],
-                        emotion_name=st.session_state.get("current_emotion_data", {}).get("emotion", "wonder")
-                    )
-                    st.session_state["active_scene_image"] = next_art
-                    st.rerun()
-
-        # Clean Inspection Expanders (Features 16 & 17)
-        with st.expander("💡 'Why This Image?' (Artistic Reasoning)", expanded=False):
-            st.info(cur_scene.get("why_this_image", "Synthesized to mirror detected emotional valence and arousal."))
-            st.caption(f"**Brush / Texture:** {cfg.get('brush_texture')}")
-            st.caption(f"**Camera Direction:** {cfg.get('camera_style')}")
-
-        with st.expander("✏️ Refine AI Diffusion Prompt", expanded=False):
-            edited_p = st.text_area("Custom Scene Prompt:", value=cur_scene.get("image_prompt", ""), height=80)
-            if st.button("🎨 Regenerate Visual"):
-                with st.spinner("Synthesizing refined visual..."):
-                    re_art = VisualSynthesizer.generate_scene_image(edited_p, emotion_name=active_emo_data.get("emotion", "wonder"))
-                    st.session_state["active_scene_image"] = re_art
-                    cur_scene["image_prompt"] = edited_p
-                    st.toast("Updated artwork with custom prompt!", icon="✨")
-                    st.rerun()
+st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
 
 # =========================================================================
-# TAB 2: POKECUT MAGIC STUDIO CUTOUT (Preserved & Enhanced Initial Feature)
+# THE 4 DEDICATED STUDIO TABS
 # =========================================================================
-with tab_cutout:
-    st.markdown("#### ✂️ Pokecut Studio Cutout & Subject Isolation")
-    st.caption("Advanced foreground segmentation with transparent alpha extraction.")
+tab_vision, tab_enhancer, tab_studio, tab_transformer = st.tabs([
+    "🔮 Vision Context & Storyteller",
+    "🪄 Prompt Image Enhancer",
+    "✂️ Magic Studio Cutout",
+    "🎚️ Mood & Style Transformer"
+])
 
-    cut_file = st.file_uploader("Upload Image to Extract Subject (PNG, JPG, WEBP)", type=["png", "jpg", "jpeg", "webp"], key="cutout_uploader")
 
-    if cut_file:
-        raw_cut_img = Image.open(cut_file)
-        
-        cut_col1, cut_col2 = st.columns(2, gap="large")
-        with cut_col1:
-            st.markdown("##### Original Subject")
-            st.image(raw_cut_img, use_column_width=True)
+# =========================================================================
+# TAB 1: VISION CONTEXT & LIVING STORYTELLER
+# =========================================================================
+with tab_vision:
+    v_left, v_right = st.columns([1.1, 1.4], gap="large")
 
-        with cut_col2:
-            st.markdown("##### Isolated Studio Cutout")
-            with st.spinner("Extracting foreground subject with GrabCut precision..."):
-                segmented_cutout = BackgroundRemover.remove_background(raw_cut_img)
-                st.image(segmented_cutout, use_column_width=True)
+    with v_left:
+        st.markdown("##### 🖼️ Uploaded Canvas")
+        active_img = st.session_state.get("current_image")
+        if active_img:
+            st.image(active_img, use_column_width=True)
 
-                # Download PNG button
+        if st.button("🔍 Deep Analyze Context, Mood & Weave Story", key="btn_deep_analyze"):
+            with st.spinner("AI Vision is inspecting context, mood and unspoken narrative..."):
+                insights = ImageVisionAnalyzer.analyze_uploaded_image(active_img, language=selected_language)
+                st.session_state["vision_insights"] = insights
+                st.toast("Completed deep visual analysis & story weaving!", icon="✨")
+                st.rerun()
+
+    with v_right:
+        insights = st.session_state.get("vision_insights", {})
+
+        st.markdown(f"### {insights.get('title', 'Visual Synthesis')}")
+
+        # 1. Context breakdown
+        st.markdown(
+            f"""
+            <div class="info-card">
+              <h4>📍 Image Context (Kya Dikh Raha Hai)</h4>
+              <p>{insights.get('context', 'Analyzing visual elements and setting...')}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # 2. Mood & Atmospheric tone
+        st.markdown(
+            f"""
+            <div class="info-card">
+              <h4>🎭 Mood & Atmosphere (Vibe Aur Ehsaas)</h4>
+              <p>{insights.get('mood', 'Analyzing atmospheric mood and lighting...')}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # 3. What it is conveying
+        st.markdown(
+            f"""
+            <div class="info-card">
+              <h4>💡 What It Conveys (Yeh Kya Express Kar Rahi Hai)</h4>
+              <p>{insights.get('conveying', 'Analyzing the core message and symbolic meaning...')}</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # 4. Living Story & Lore
+        st.markdown("##### 📖 The Story (Kahani):")
+        st.markdown(
+            f"""
+            <div class="story-frame">
+              {insights.get('story', 'A story woven directly from this image will appear here.')}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        # Natural Speech Narration Player
+        cur_emo = insights.get("emotion", "wonder")
+        cfg = EMOTION_CONFIG.get(cur_emo, EMOTION_CONFIG["neutral"])
+        AudioManager.render_audio_controller(
+            narration_text=insights.get("story", ""),
+            emotion_name=cur_emo,
+            sound_type=cfg.get("ambient_sound_type", "forest_breeze"),
+            language=selected_language
+        )
+
+
+# =========================================================================
+# TAB 2: PROMPT IMAGE ENHANCER (Transform EXACT Image with Prompts)
+# =========================================================================
+with tab_enhancer:
+    st.markdown("#### 🪄 Prompt-Guided Image Enhancer")
+    st.caption("Enter any instruction to enhance and transform the **exact image already uploaded** (lighting, color grading, mood, details).")
+
+    p_col1, p_col2 = st.columns([1, 1], gap="large")
+
+    active_img = st.session_state.get("current_image")
+
+    with p_col1:
+        st.markdown("##### Original Image")
+        if active_img:
+            st.image(active_img, use_column_width=True)
+
+        user_prompt = st.text_input(
+            "How do you want to enhance or transform this image?",
+            placeholder="e.g. Add golden hour sunset lighting, high contrast and warm glow / Make it cyberpunk neon night / Sharpen details with cinematic color grading",
+            key="input_enhancer_prompt"
+        )
+
+        enhance_btn = st.button("✨ Enhance & Transform This Image", key="btn_apply_prompt_enhancement")
+
+    with p_col2:
+        st.markdown("##### Enhanced Masterpiece")
+        if enhance_btn:
+            if user_prompt.strip():
+                with st.spinner("Transforming and enhancing your exact image..."):
+                    res = PromptImageEnhancer.enhance_image_with_prompt(active_img, user_prompt)
+                    st.session_state["enhanced_image"] = res["enhanced_image"]
+                    st.session_state["enhancement_summary"] = res["summary"]
+                    st.toast("Image enhanced successfully!", icon="🪄")
+            else:
+                st.warning("Please type an enhancement instruction or prompt above.")
+
+        enhanced_img = st.session_state.get("enhanced_image")
+        if enhanced_img:
+            st.image(enhanced_img, use_column_width=True)
+            st.success(f"**Changes:** {st.session_state.get('enhancement_summary', 'Enhanced based on prompt.')}")
+
+            # Download Enhanced Button
+            buf = io.BytesIO()
+            enhanced_img.save(buf, format="PNG")
+            st.download_button(
+                label="⬇️ Download Enhanced Image (PNG)",
+                data=buf.getvalue(),
+                file_name="enhanced_masterpiece.png",
+                mime="image/png"
+            )
+        else:
+            st.info("👈 Enter a prompt on the left and click **Enhance & Transform** to view the result here.")
+
+
+# =========================================================================
+# TAB 3: MAGIC STUDIO CUTOUT (Pokecut Signature Background Isolation)
+# =========================================================================
+with tab_studio:
+    st.markdown("#### ✂️ Pokecut Studio Cutout & Background Isolation")
+    st.caption("Precision foreground subject segmentation with customizable studio backdrops.")
+
+    active_img = st.session_state.get("current_image")
+
+    s_col1, s_col2 = st.columns([1, 1], gap="large")
+
+    with s_col1:
+        st.markdown("##### Original Subject")
+        if active_img:
+            st.image(active_img, use_column_width=True)
+
+        bg_mode = st.selectbox(
+            "Select Background Style",
+            ["Transparent", "DSLR Bokeh Blur", "Solid Color", "Cyberpunk Studio"]
+        )
+
+        solid_pick = (255, 255, 255)
+        if bg_mode == "Solid Color":
+            picked_hex = st.color_picker("Pick Solid Backdrop Color", "#FFFFFF")
+            solid_pick = tuple(int(picked_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
+
+        cut_btn = st.button("✂️ Extract Subject & Apply Backdrop", key="btn_apply_cutout")
+
+    with s_col2:
+        st.markdown("##### Studio Cutout Result")
+        if cut_btn or "studio_cutout_result" in st.session_state:
+            if cut_btn:
+                with st.spinner("Extracting foreground subject with GrabCut precision..."):
+                    raw_cut = BackgroundRemover.remove_background(active_img)
+                    comp_res = BackgroundRemover.composite_cutout(
+                        raw_cut,
+                        active_img,
+                        bg_style=bg_mode,
+                        solid_color=solid_pick
+                    )
+                    st.session_state["studio_cutout_result"] = comp_res
+
+            disp_img = st.session_state.get("studio_cutout_result")
+            if disp_img:
+                st.image(disp_img, use_column_width=True)
+
                 buf = io.BytesIO()
-                segmented_cutout.save(buf, format="PNG")
+                disp_img.save(buf, format="PNG")
                 st.download_button(
-                    label="⬇️ Download Cutout (Transparent PNG)",
+                    label="⬇️ Download Studio Cutout (PNG)",
                     data=buf.getvalue(),
                     file_name="pokecut_studio_cutout.png",
                     mime="image/png"
                 )
-
-        # Feature Engineering Metrics (from user's original codebase)
-        st.markdown("---")
-        st.markdown("##### 📊 Visual Spectrum Metrics")
-        features = FeatureEngineer.extract_visual_features(raw_cut_img)
-        m1, m2, m3 = st.columns(3)
-        m1.metric("Brightness Index", f"{features['brightness']:.1f}")
-        m2.metric("Chromatic Saturation", f"{features['saturation']:.1f}")
-        m3.metric("Edge Density Clarity", f"{features['edge_density']:.1f}%")
-    else:
-        st.info("👆 Upload any photo above to instantly isolate the foreground subject with Pokecut studio precision.")
+        else:
+            st.info("👈 Select your desired backdrop on the left and click **Extract Subject**.")
 
 
 # =========================================================================
-# TAB 3: MOOD & STYLE TRANSFORMER (Optical Filters & Temperature Shift)
+# TAB 4: MOOD & STYLE TRANSFORMER (Optical Grading & Artistic Filters)
 # =========================================================================
-with tab_mood:
+with tab_transformer:
     st.markdown("#### 🎚️ Mood & Optical Style Transformer")
-    st.caption("Apply real-time cinematic color grading, emotional temperature, and geometric filters.")
+    st.caption("Apply real-time cinematic color temperature, dynamic contrast, and artistic style presets.")
 
-    mood_img_source = st.session_state.get("active_scene_image")
-    
-    t_col1, t_col2 = st.columns([1, 1.4], gap="large")
+    active_img = st.session_state.get("current_image")
 
-    with t_col1:
-        st.markdown("##### Studio Filter Controls")
-        geom_filter = st.selectbox(
-            "Geometric Filter Effect",
-            ["None", "Grayscale Conversion", "Sharpen Details", "Edge Highlight", "Invert Colors", "Gaussian Blur"]
+    m_col1, m_col2 = st.columns([1, 1.2], gap="large")
+
+    with m_col1:
+        st.markdown("##### Artistic Preset Filters")
+        style_preset = st.selectbox(
+            "Choose Style Preset",
+            [
+                "None",
+                "🎬 Cinematic Teal & Orange",
+                "🌅 Golden Hour Sunset",
+                "🕶️ Moody Film Noir",
+                "👾 Cyberpunk Neon",
+                "🎨 Impressionist Oil Painting",
+                "✏️ Fine Pencil Sketch"
+            ]
         )
 
-        warm_val = st.slider("Temperature: ❄️ Cold / Blue vs ☀️ Warm / Amber", -1.0, 1.0, 0.0, 0.1)
-        energy_val = st.slider("Dynamics: 🌊 Soft & Serene vs ⚡ Sharp & Chaotic", -1.0, 1.0, 0.0, 0.1)
+        st.markdown("##### Fine-Tune Sliders")
+        warmth = st.slider("Temperature: ❄️ Cold vs ☀️ Warm", -1.0, 1.0, 0.0, 0.1)
+        dynamics = st.slider("Dynamics: 🌊 Soft vs ⚡ Sharp", -1.0, 1.0, 0.0, 0.1)
 
-        apply_btn = st.button("🎨 Render Graded Masterpiece")
+        apply_grade = st.button("🎨 Apply Style to Canvas", key="btn_apply_grade")
 
-    with t_col2:
-        st.markdown("##### Graded Canvas Preview")
-        if mood_img_source:
-            preview_img = mood_img_source
-            if geom_filter != "None":
-                preview_img = ModelEngine.transform_geometry(preview_img, geom_filter)
-            if warm_val != 0.0 or energy_val != 0.0:
-                preview_img = MoodTransformer.transform_image(preview_img, warm_val, energy_val)
+    with m_col2:
+        st.markdown("##### Transformed Preview")
+        if active_img:
+            preview = active_img
+            if style_preset != "None":
+                preview = ModelEngine.apply_preset_style(preview, style_preset)
+            if warmth != 0.0 or dynamics != 0.0:
+                preview = MoodTransformer.transform_image(preview, warmth, dynamics)
 
-            st.image(preview_img, use_column_width=True)
+            st.image(preview, use_column_width=True)
 
-            if apply_btn:
-                st.session_state["active_scene_image"] = preview_img
-                st.toast("Applied optical grading to active scene canvas!", icon="🎨")
+            if apply_grade:
+                st.session_state["current_image"] = preview
+                st.toast("Saved styled image as active canvas!", icon="🎨")
                 st.rerun()
-        else:
-            st.info("Generate or upload an image in Tab 1 to transform its style here.")
 
-
-# =========================================================================
-# TAB 4: EMOTIONAL JOURNEY & STORYBOOK PDF (Timeline & Archives)
-# =========================================================================
-with tab_journey:
-    st.markdown("#### 📈 Emotional Journey Arc & Collectible Storybook")
-    st.caption("Explore your session's emotional trajectory across scenes and export your illustrated storybook.")
-
-    history_scenes = st.session_state.get("story_history", [])
-
-    # Interactive Plotly Timeline Chart (Feature 15)
-    timeline_fig = TimelineVisualizer.create_emotion_timeline_chart(history_scenes)
-    st.plotly_chart(timeline_fig, use_container_width=True, config={"displayModeBar": False})
-
-    st.markdown("---")
-    j_col1, j_col2 = st.columns(2, gap="large")
-
-    with j_col1:
-        st.markdown("##### 📄 Export Printable Storybook PDF")
-        st.caption("Compiles all generated chapters, hero lore, and emotional settings into an illustrated PDF document.")
-
-        if history_scenes:
-            pdf_data = ExportEngine.generate_storybook_pdf(
-                session_title=st.session_state.get("active_scene_data", {}).get("title", "Dastaan Storybook"),
-                character=st.session_state.get("character", DEFAULT_CHARACTERS[0]),
-                setting=st.session_state.get("setting", DEFAULT_SETTINGS[0]),
-                scenes=history_scenes
-            )
+            # Download Styled Image
+            buf = io.BytesIO()
+            preview.save(buf, format="PNG")
             st.download_button(
-                label="📄 Download Storybook PDF",
-                data=pdf_data,
-                file_name="dastaan_living_storybook.pdf",
-                mime="application/pdf"
+                label="⬇️ Download Styled Masterpiece (PNG)",
+                data=buf.getvalue(),
+                file_name="dastaan_styled_canvas.png",
+                mime="image/png"
             )
-        else:
-            st.button("📄 Download Storybook PDF", disabled=True, help="Weave at least 1 chapter in Tab 1 to export your storybook.")
-
-    with j_col2:
-        st.markdown("##### 💾 Save to Memory Wall")
-        st.caption("Persist this creative journey to the local SQLite database for future replays.")
-
-        if st.button("💾 Archive Current Journey"):
-            if history_scenes:
-                sess_t = history_scenes[0].get("title", "Creative Session")
-                MemoryStore.save_session(
-                    session_title=sess_t,
-                    character_name=st.session_state.get("character", DEFAULT_CHARACTERS[0])["name"],
-                    setting_name=st.session_state.get("setting", DEFAULT_SETTINGS[0])["name"],
-                    language=st.session_state.get("language", "English"),
-                    scenes=history_scenes
-                )
-                st.toast("Saved journey to Memory Wall!", icon="💾")
-            else:
-                st.warning("Generate at least 1 scene in Tab 1 before archiving.")
