@@ -8,7 +8,7 @@ import json
 import re
 import requests
 import streamlit as st
-from emotion import get_api_key, EMOTION_CONFIG
+from emotion import get_api_key, EMOTION_CONFIG, CANDIDATE_MODELS
 
 # Default archetypes for toy-story / magical realism character & setting lock
 DEFAULT_CHARACTERS = [
@@ -135,22 +135,26 @@ Output strictly valid JSON matching this schema:
 }}
 """
             try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 payload = {
                     "contents": [{"parts": [{"text": prompt}]}],
                     "generationConfig": {"temperature": 0.7, "response_mime_type": "application/json"}
                 }
-                res = requests.post(url, headers=headers, json=payload, timeout=14)
-                if res.status_code == 200:
-                    raw_text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
-                    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
-                    data = json.loads(cleaned)
-                    data["emotion"] = emotion_name
-                    data["valence"] = valence
-                    data["arousal"] = arousal
-                    data["palette"] = cfg.get("palette", [])
-                    return data
+                for m in CANDIDATE_MODELS:
+                    try:
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
+                        res = requests.post(url, headers=headers, json=payload, timeout=14)
+                        if res.status_code == 200:
+                            raw_text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
+                            cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
+                            data = json.loads(cleaned)
+                            data["emotion"] = emotion_name
+                            data["valence"] = valence
+                            data["arousal"] = arousal
+                            data["palette"] = cfg.get("palette", [])
+                            return data
+                    except Exception:
+                        continue
             except Exception:
                 pass
 

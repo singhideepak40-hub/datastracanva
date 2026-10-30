@@ -45,14 +45,16 @@ def get_api_key():
         pass
     return os.environ.get("GEMINI_API_KEY", "").strip()
 
+CANDIDATE_MODELS = ["gemini-flash-lite-latest", "gemini-3.8-flash", "gemini-flash-latest"]
+
 # =========================================================================
 # FEATURE 1: LLM Emotion Engine with Strict JSON Validation & Fallback
 # =========================================================================
 class EmotionEngine:
     @staticmethod
-    def _call_gemini_json(prompt: str, api_key: str, model: str = "gemini-1.5-flash") -> dict:
-        """Invokes Gemini REST API enforcing strict JSON schema."""
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    def _call_gemini_json(prompt: str, api_key: str, model: str = None) -> dict:
+        """Invokes Gemini REST API enforcing strict JSON schema across candidate models."""
+        models_to_try = [model] if model else CANDIDATE_MODELS
         headers = {"Content-Type": "application/json"}
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
@@ -61,15 +63,24 @@ class EmotionEngine:
                 "response_mime_type": "application/json"
             }
         }
-        response = requests.post(url, headers=headers, json=payload, timeout=12)
-        if response.status_code == 200:
-            res_data = response.json()
-            raw_text = res_data["candidates"][0]["content"]["parts"][0]["text"]
-            # Clean possible markdown fencing
-            cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
-            return json.loads(cleaned)
-        else:
-            raise RuntimeError(f"Gemini API returned code {response.status_code}: {response.text}")
+
+        last_err = None
+        for m in models_to_try:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
+                response = requests.post(url, headers=headers, json=payload, timeout=12)
+                if response.status_code == 200:
+                    res_data = response.json()
+                    raw_text = res_data["candidates"][0]["content"]["parts"][0]["text"]
+                    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
+                    return json.loads(cleaned)
+                else:
+                    last_err = f"Model {m} status {response.status_code}: {response.text}"
+            except Exception as e:
+                last_err = str(e)
+                continue
+
+        raise RuntimeError(f"All Gemini models failed: {last_err}")
 
     @staticmethod
     def _rule_based_fallback(text: str) -> dict:
@@ -181,7 +192,6 @@ class WebcamEmotionAnalyzer:
                 image.save(buffered, format="JPEG", quality=85)
                 img_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 payload = {
                     "contents": [{
@@ -194,11 +204,17 @@ class WebcamEmotionAnalyzer:
                     }],
                     "generationConfig": {"temperature": 0.2, "response_mime_type": "application/json"}
                 }
-                res = requests.post(url, headers=headers, json=payload, timeout=12)
-                if res.status_code == 200:
-                    raw_text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
-                    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
-                    return json.loads(cleaned)
+
+                for m in CANDIDATE_MODELS:
+                    try:
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
+                        res = requests.post(url, headers=headers, json=payload, timeout=12)
+                        if res.status_code == 200:
+                            raw_text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
+                            cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
+                            return json.loads(cleaned)
+                    except Exception:
+                        continue
             except Exception:
                 pass
 
@@ -241,7 +257,6 @@ class ImageVisionAnalyzer:
                 image.save(buffered, format="JPEG", quality=85)
                 img_b64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
                 headers = {"Content-Type": "application/json"}
                 payload = {
                     "contents": [{
@@ -253,11 +268,17 @@ class ImageVisionAnalyzer:
                     }],
                     "generationConfig": {"temperature": 0.2, "response_mime_type": "application/json"}
                 }
-                res = requests.post(url, headers=headers, json=payload, timeout=14)
-                if res.status_code == 200:
-                    raw_text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
-                    cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
-                    return json.loads(cleaned)
+
+                for m in CANDIDATE_MODELS:
+                    try:
+                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={api_key}"
+                        res = requests.post(url, headers=headers, json=payload, timeout=14)
+                        if res.status_code == 200:
+                            raw_text = res.json()["candidates"][0]["content"]["parts"][0]["text"]
+                            cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text.strip(), flags=re.MULTILINE)
+                            return json.loads(cleaned)
+                    except Exception:
+                        continue
             except Exception:
                 pass
 
