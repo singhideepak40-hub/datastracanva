@@ -166,7 +166,7 @@ if "vision_insights" not in st.session_state:
 # =========================================================================
 # HEADER & GLOBAL CANVAS UPLOADER
 # =========================================================================
-head_col1, head_col2 = st.columns([3, 1])
+head_col1, head_col2, head_col3 = st.columns([2.3, 0.85, 1.05])
 
 with head_col1:
     st.markdown("## ✨ Sudarshan Studio")
@@ -184,6 +184,20 @@ with head_col2:
         index=0,
         help="Language used for context analysis and storytelling."
     )
+
+with head_col3:
+    doc_pdf_path = os.path.join(os.path.dirname(__file__), "sudarshan_studio_architecture_and_ml_guide.pdf")
+    if os.path.exists(doc_pdf_path):
+        with open(doc_pdf_path, "rb") as f:
+            pdf_bytes = f.read()
+        st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
+        st.download_button(
+            label="📑 Architecture & ML PDF",
+            data=pdf_bytes,
+            file_name="sudarshan_studio_architecture_and_ml_guide.pdf",
+            mime="application/pdf",
+            help="Download full technical architecture and top 20 ML viva/judge questions PDF."
+        )
 
 # Unified Studio Image Uploader (Controls all tabs)
 upload_col1, upload_col2 = st.columns([2.5, 1], gap="medium")
