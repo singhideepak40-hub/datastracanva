@@ -129,6 +129,12 @@ st.markdown("""
         color: #FFFFFF;
         box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
     }
+
+    /* Clean Studio Look: Hide Streamlit Default Chrome */
+    #MainMenu {visibility: hidden; display: none !important;}
+    header {visibility: hidden; display: none !important;}
+    footer {visibility: hidden; display: none !important;}
+    .stDeployButton {display: none !important;}
 </style>
 """, unsafe_allow_html=True)
 
