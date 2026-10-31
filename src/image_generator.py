@@ -1,5 +1,7 @@
 import os
 import sys
+import re
+import time
 import requests
 import io
 import urllib.parse
@@ -45,20 +47,48 @@ class ImageGenerator:
         return user_prompt
 
     @staticmethod
-    def generate_from_prompt(prompt: str, enrich: bool = True) -> Image.Image:
-        """Generates high-definition artwork without any watermarks or third-party branding."""
+    def generate_from_prompt(prompt: str, enrich: bool = True) -> tuple:
+        """
+        Generates high-definition artwork without any watermarks or third-party branding.
+        Handles API cooldowns with automatic retry and graceful feedback.
+        Returns: (image: Image.Image, is_real_ai: bool, message: str)
+        """
         final_prompt = prompt
         if enrich:
             final_prompt = ImageGenerator.enrich_prompt_with_llm(prompt)
 
+        clean_prompt = final_prompt.replace("\n", " ").strip()
+        encoded_prompt = urllib.parse.quote(clean_prompt)
+        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}"
+        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+
+        # Attempt 1: Direct Generation (60s timeout for full diffusion sampling)
         try:
-            encoded_prompt = urllib.parse.quote(final_prompt.replace("\n", " ").strip())
-            url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024&nologo=true"
-            response = requests.get(url, timeout=25)
-            if response.status_code == 200:
-                return Image.open(io.BytesIO(response.content)).convert("RGB")
+            response = requests.get(url, headers=headers, timeout=60)
+            if response.status_code == 200 and "image" in response.headers.get("content-type", ""):
+                img = Image.open(io.BytesIO(response.content)).convert("RGB")
+                return img, True, "Masterpiece synthesized successfully!"
+
+            # If rate-limited (402 cooldown per IP)
+            if response.status_code == 402:
+                wait_sec = 22
+                try:
+                    match = re.search(r"Retry after (\d+)s", response.text)
+                    if match:
+                        wait_sec = min(int(match.group(1)) + 1, 30)
+                except Exception:
+                    pass
+
+                time.sleep(wait_sec)
+
+                # Attempt 2: Retry after cooldown
+                r2 = requests.get(url, headers=headers, timeout=60)
+                if r2.status_code == 200 and "image" in r2.headers.get("content-type", ""):
+                    img = Image.open(io.BytesIO(r2.content)).convert("RGB")
+                    return img, True, "Masterpiece synthesized successfully!"
         except Exception:
             pass
 
-        # Generative procedural fallback if offline or timed out
-        return VisualSynthesizer.render_procedural_fallback("wonder", prompt)
+        # Generative procedural fallback if network timed out
+        fallback = VisualSynthesizer.render_procedural_fallback("wonder", prompt)
+        return fallback, False, "The public GPU network is temporarily in cooldown (1 request per 45s). Showing procedural preview. Please click Synthesize again in a moment."

@@ -338,11 +338,19 @@ with tab_generator:
         st.markdown("##### Synthesized Masterpiece")
         if btn_generate:
             if prompt_text.strip():
-                with st.spinner("Neural Vision Engine synthesizing high-definition artwork..."):
-                    gen_img = ImageGenerator.generate_from_prompt(prompt_text, enrich=use_neural_elevation)
+                with st.spinner("Neural Vision Engine synthesizing high-definition artwork (takes ~25-35s)..."):
+                    res = ImageGenerator.generate_from_prompt(prompt_text, enrich=use_neural_elevation)
+                    if isinstance(res, tuple):
+                        gen_img, is_real, status_msg = res
+                    else:
+                        gen_img, is_real, status_msg = res, True, "Synthesized!"
                     st.session_state["generated_art"] = gen_img
                     st.session_state["generated_prompt_text"] = prompt_text
-                    st.toast("Synthesized masterpiece!", icon="🎨")
+                    st.session_state["generated_art_is_real"] = is_real
+                    if is_real:
+                        st.toast("Synthesized masterpiece!", icon="🎨")
+                    else:
+                        st.warning(f"⚠️ {status_msg}")
             else:
                 st.warning("Please type a prompt on the left to generate art.")
 
