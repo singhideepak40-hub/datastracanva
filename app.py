@@ -17,11 +17,24 @@ import os
 import sys
 import io
 import streamlit as st
+
+# =========================================================================
+# PAGE SETUP MUST BE THE VERY FIRST STREAMLIT CALL
+# =========================================================================
+st.set_page_config(
+    page_title="Sudarshan Studio | AI Creative Studio",
+    page_icon="✨",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
 import numpy as np
 from PIL import Image
 
-# Workspace imports
-sys.path.insert(0, os.path.dirname(__file__))
+# Ensure project root is first in module search path
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
 
 from emotion import ImageVisionAnalyzer, PromptImageEnhancer, EMOTION_CONFIG
 from visuals import VisualSynthesizer, MoodTransformer
@@ -30,16 +43,6 @@ from src.background_remover import BackgroundRemover
 from src.feature_engineering import FeatureEngineer
 from src.model_engine import ModelEngine
 from src.image_generator import ImageGenerator
-
-# =========================================================================
-# PAGE SETUP & SUDARSHAN STUDIO DARK THEME
-# =========================================================================
-st.set_page_config(
-    page_title="Sudarshan Studio | AI Creative Studio",
-    page_icon="✨",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
 
 st.markdown("""
 <style>
