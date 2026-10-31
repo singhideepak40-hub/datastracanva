@@ -20,53 +20,60 @@ class BackgroundRemover:
     @staticmethod
     def remove_background(
         image: Image.Image,
-        engine: str = "🎯 Studio AI (Ultra-Clean Hair & Edges)",
+        engine: str = "⚡ Fast AI (Instant Studio Matting)",
         feather_edges: bool = True
     ) -> Image.Image:
         """
-        State-of-the-art background removal pipeline.
+        State-of-the-art background removal pipeline optimized for cloud environments.
         Supports:
-        - ISNet (gold-standard deep salient object matting)
-        - U2NetP (ultra-fast lightweight AI)
+        - U2NetP (ultra-fast lightweight AI, zero-latency, cloud-safe)
+        - ISNet (deep salient object matting with memory guard)
         - GrabCut (classical OpenCV morphological fallback)
         """
         img_rgb = image.convert("RGB")
-        w, h = img_rgb.size
+        orig_w, orig_h = img_rgb.size
 
-        # 1. Studio AI Engine (ISNet)
-        if "Studio AI" in engine or "ISNet" in engine:
-            try:
-                import rembg
-                sess = get_rembg_session("isnet-general-use")
-                if sess:
-                    res = rembg.remove(
-                        img_rgb,
-                        session=sess,
-                        alpha_matting=True,
-                        alpha_matting_foreground_threshold=240,
-                        alpha_matting_background_threshold=15,
-                        alpha_matting_erode_size=8
-                    )
-                    if feather_edges:
-                        res = BackgroundRemover._feather_alpha(res)
-                    return res
-            except Exception:
-                pass
+        # Memory safeguard: cap resolution to 1024px during neural matting to avoid container OOM
+        max_dim = 1024
+        needs_resize = max(orig_w, orig_h) > max_dim
+        if needs_resize:
+            scale = max_dim / max(orig_w, orig_h)
+            work_img = img_rgb.resize((int(orig_w * scale), int(orig_h * scale)), Image.Resampling.LANCZOS)
+        else:
+            work_img = img_rgb
 
-        # 2. Fast AI Engine (U2NetP)
-        if "Fast AI" in engine or "U2NetP" in engine:
+        # 1. Fast AI Engine (U2NetP - 4.7MB lightweight model, optimal for cloud RAM)
+        if "Fast AI" in engine or "U2NetP" in engine or "Instant" in engine:
             try:
                 import rembg
                 sess = get_rembg_session("u2netp")
                 if sess:
-                    res = rembg.remove(img_rgb, session=sess)
+                    res = rembg.remove(work_img, session=sess)
+                    if needs_resize:
+                        res = res.resize((orig_w, orig_h), Image.Resampling.LANCZOS)
                     if feather_edges:
                         res = BackgroundRemover._feather_alpha(res)
                     return res
             except Exception:
                 pass
 
-        # 3. Enhanced GrabCut Fallback
+        # 2. Studio AI Engine (ISNet - deep salient object matting, memory-safe)
+        if "Studio AI" in engine or "ISNet" in engine or "Ultra-Clean" in engine:
+            try:
+                import rembg
+                sess = get_rembg_session("isnet-general-use")
+                if sess:
+                    # NOTE: alpha_matting is kept False to prevent scipy sparse matrix OOM on 1GB cloud RAM
+                    res = rembg.remove(work_img, session=sess, alpha_matting=False)
+                    if needs_resize:
+                        res = res.resize((orig_w, orig_h), Image.Resampling.LANCZOS)
+                    if feather_edges:
+                        res = BackgroundRemover._feather_alpha(res)
+                    return res
+            except Exception:
+                pass
+
+        # 3. Robust OpenCV GrabCut Fallback
         return BackgroundRemover._grabcut_fallback(img_rgb, feather_edges)
 
     @staticmethod

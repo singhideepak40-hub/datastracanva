@@ -443,10 +443,11 @@ with tab_studio:
         engine_choice = st.selectbox(
             "AI Cutout Precision Engine",
             [
-                "🎯 Studio AI (Ultra-Clean Hair & Edges)",
-                "⚡ Fast AI (Instant Mobile)",
-                "✂️ Classical GrabCut"
+                "⚡ Fast AI (Instant Studio Matting - Recommended)",
+                "🎯 Studio AI (Deep ISNet Salient Matting)",
+                "✂️ Classical GrabCut (Geometric Edge Detection)"
             ],
+            index=0,
             key="cutout_engine_choice"
         )
 
@@ -484,20 +485,32 @@ with tab_studio:
         if cut_btn or "studio_cutout_result" in st.session_state:
             if cut_btn:
                 with st.spinner("Neural Matting isolating subject with sub-pixel precision..."):
-                    raw_cut = BackgroundRemover.remove_background(
-                        active_img,
-                        engine=engine_choice,
-                        feather_edges=feather_opt
-                    )
-                    comp_res = BackgroundRemover.composite_cutout(
-                        raw_cut,
-                        active_img,
-                        bg_style=bg_mode,
-                        solid_color=solid_pick,
-                        blur_radius=blur_val
-                    )
-                    st.session_state["studio_cutout_result"] = comp_res
-                    st.toast("Extracted studio cutout with perfect edges!", icon="✂️")
+                    try:
+                        raw_cut = BackgroundRemover.remove_background(
+                            active_img,
+                            engine=engine_choice,
+                            feather_edges=feather_opt
+                        )
+                        comp_res = BackgroundRemover.composite_cutout(
+                            raw_cut,
+                            active_img,
+                            bg_style=bg_mode,
+                            solid_color=solid_pick,
+                            blur_radius=blur_val
+                        )
+                        st.session_state["studio_cutout_result"] = comp_res
+                        st.toast("Extracted studio cutout with perfect edges!", icon="✂️")
+                    except Exception as err:
+                        st.warning("Processed using fallback edge matting for memory safety.")
+                        raw_cut = BackgroundRemover._grabcut_fallback(active_img.convert("RGB"), feather_edges=feather_opt)
+                        comp_res = BackgroundRemover.composite_cutout(
+                            raw_cut,
+                            active_img,
+                            bg_style=bg_mode,
+                            solid_color=solid_pick,
+                            blur_radius=blur_val
+                        )
+                        st.session_state["studio_cutout_result"] = comp_res
 
             disp_img = st.session_state.get("studio_cutout_result")
             if disp_img:
