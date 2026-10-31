@@ -416,11 +416,11 @@ with tab_enhancer:
 
 
 # =========================================================================
-# TAB 3: MAGIC STUDIO CUTOUT (Pokecut Signature Background Isolation)
+# TAB 4: MAGIC STUDIO CUTOUT (Pokecut Signature Background Isolation)
 # =========================================================================
 with tab_studio:
     st.markdown("#### ✂️ Pokecut Studio Cutout & Background Isolation")
-    st.caption("Precision foreground subject segmentation with customizable studio backdrops.")
+    st.caption("Deep salient object matting with sub-pixel edge feathering & customizable studio backdrops.")
 
     active_img = st.session_state.get("current_image")
 
@@ -431,14 +431,41 @@ with tab_studio:
         if active_img:
             st.image(active_img, use_column_width=True)
 
-        bg_mode = st.selectbox(
-            "Select Background Style",
-            ["Transparent", "DSLR Bokeh Blur", "Solid Color", "Cyberpunk Studio"]
+        engine_choice = st.selectbox(
+            "AI Cutout Precision Engine",
+            [
+                "🎯 Studio AI (Ultra-Clean Hair & Edges)",
+                "⚡ Fast AI (Instant Mobile)",
+                "✂️ Classical GrabCut"
+            ],
+            key="cutout_engine_choice"
         )
+
+        feather_opt = st.checkbox(
+            "✨ Sub-Pixel Edge Feathering (Smooth contours & de-fringing)",
+            value=True,
+            key="cb_feather_opt"
+        )
+
+        bg_mode = st.selectbox(
+            "Select Studio Backdrop Style",
+            [
+                "Transparent",
+                "DSLR Bokeh Blur",
+                "Solid Color",
+                "Studio Dark Gradient",
+                "Warm Sunset Gradient"
+            ],
+            key="cutout_bg_mode"
+        )
+
+        blur_val = 22
+        if bg_mode == "DSLR Bokeh Blur":
+            blur_val = st.slider("Bokeh Blur Intensity", 5, 45, 22, 1, key="slider_blur_radius")
 
         solid_pick = (255, 255, 255)
         if bg_mode == "Solid Color":
-            picked_hex = st.color_picker("Pick Solid Backdrop Color", "#FFFFFF")
+            picked_hex = st.color_picker("Pick Studio Backdrop Color", "#FFFFFF", key="cutout_color_picker")
             solid_pick = tuple(int(picked_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4))
 
         cut_btn = st.button("✂️ Extract Subject & Apply Backdrop", key="btn_apply_cutout")
@@ -447,30 +474,43 @@ with tab_studio:
         st.markdown("##### Studio Cutout Result")
         if cut_btn or "studio_cutout_result" in st.session_state:
             if cut_btn:
-                with st.spinner("Extracting foreground subject with GrabCut precision..."):
-                    raw_cut = BackgroundRemover.remove_background(active_img)
+                with st.spinner("Neural Matting isolating subject with sub-pixel precision..."):
+                    raw_cut = BackgroundRemover.remove_background(
+                        active_img,
+                        engine=engine_choice,
+                        feather_edges=feather_opt
+                    )
                     comp_res = BackgroundRemover.composite_cutout(
                         raw_cut,
                         active_img,
                         bg_style=bg_mode,
-                        solid_color=solid_pick
+                        solid_color=solid_pick,
+                        blur_radius=blur_val
                     )
                     st.session_state["studio_cutout_result"] = comp_res
+                    st.toast("Extracted studio cutout with perfect edges!", icon="✂️")
 
             disp_img = st.session_state.get("studio_cutout_result")
             if disp_img:
                 st.image(disp_img, use_column_width=True)
 
-                buf = io.BytesIO()
-                disp_img.save(buf, format="PNG")
-                st.download_button(
-                    label="⬇️ Download Studio Cutout (PNG)",
-                    data=buf.getvalue(),
-                    file_name="pokecut_studio_cutout.png",
-                    mime="image/png"
-                )
+                c_down1, c_down2 = st.columns(2)
+                with c_down1:
+                    buf = io.BytesIO()
+                    disp_img.save(buf, format="PNG")
+                    st.download_button(
+                        label="⬇️ Download Cutout (PNG)",
+                        data=buf.getvalue(),
+                        file_name="pokecut_studio_cutout.png",
+                        mime="image/png"
+                    )
+                with c_down2:
+                    if st.button("📥 Set as Active Canvas", key="btn_cutout_to_canvas"):
+                        st.session_state["current_image"] = disp_img
+                        st.toast("Cutout set as active canvas!", icon="📥")
+                        st.rerun()
         else:
-            st.info("👈 Select your desired backdrop on the left and click **Extract Subject**.")
+            st.info("👈 Select your precision engine and backdrop on the left, then click **Extract Subject**.")
 
 
 # =========================================================================
