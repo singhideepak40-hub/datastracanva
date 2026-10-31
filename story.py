@@ -1,5 +1,5 @@
 """
-Story Engine Module for Dastaan Canvas
+Story Engine Module for Sudarshan Studio
 Handles Scene-by-Scene progression, narrative branching, character/palette lock,
 and multi-lingual storytelling (English, Hindi, Hinglish).
 """
@@ -98,7 +98,7 @@ class StoryEngine:
 
         if api_key:
             prompt = f"""
-You are the creative storytelling AI for "Dastaan Canvas", combining the warmth and magical wonder of Toy Story with high-aesthetic modern studio visual narratives.
+You are the creative storytelling AI for "Sudarshan Studio", combining the warmth and magical wonder of animated cinema with high-aesthetic modern studio visual narratives.
 
 Story Context:
 - Character (LOCKED): {character['name']} ({character['description']})

@@ -1,10 +1,10 @@
 """
-Visuals Module for Dastaan Canvas
+Visuals Module for Sudarshan Studio
 Handles:
 - AI Image generation with prompt enrichment
 - Live reactive p5.js canvas (valence & arousal driven flow field)
 - Mood Transform Slider (warm/cold, calm/chaotic image grading)
-- Studio subject cutout (Pokecut aesthetic)
+- Studio subject cutout (Sudarshan aesthetic)
 - Cinematic CSS styling (Ken Burns zoom & crossfade)
 """
 

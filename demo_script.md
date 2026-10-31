@@ -1,4 +1,4 @@
-# 🎬 Dastaan Canvas: 60-Second Live Demonstration Script
+# 🎬 Sudarshan Studio: 60-Second Live Demonstration Script
 
 ### Concept Target
 Show how the system's **behaviour expresses an idea**: shifting instantly from cold, slow, reflective melancholy to warm, fast, vibrant, golden joy.
@@ -6,8 +6,8 @@ Show how the system's **behaviour expresses an idea**: shifting instantly from c
 ---
 
 ### Phase 1: Idle Breathing Equilibrium (0:00 - 0:10)
-- **Visual:** Open app. The dark obsidian Pokecut studio UI displays the live p5.js canvas undulating in a soft sinusoidal purple/blue harmonic drift.
-- **Presenter:** *"Notice how Dastaan Canvas feels alive before any input. The canvas is breathing in equilibrium, waiting to mirror our emotional pulse."*
+- **Visual:** Open app. The dark obsidian Sudarshan studio UI displays the live p5.js canvas undulating in a soft sinusoidal purple/blue harmonic drift.
+- **Presenter:** *"Notice how Sudarshan Studio feels alive before any input. The canvas is breathing in equilibrium, waiting to mirror our emotional pulse."*
 
 ---
 
@@ -39,4 +39,4 @@ Show how the system's **behaviour expresses an idea**: shifting instantly from c
 
 ### Phase 4: Export & Collectible Memory (0:50 - 1:00)
 - **Action:** Click **💾 Save Session** to archive into SQLite Memory Wall, then click **📄 Export PDF**.
-- **Presenter:** *"In 60 seconds, our canvas transformed colour, motion, pacing, and narrative to reflect the human heart. That is Dastaan Canvas."*
+- **Presenter:** *"In 60 seconds, our canvas transformed colour, motion, pacing, and narrative to reflect the human heart. That is Sudarshan Studio."*

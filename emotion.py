@@ -1,5 +1,5 @@
 """
-Emotion Engine Module for Dastaan Canvas
+Emotion Engine Module for Sudarshan Studio
 Handles Text, Voice, Webcam, and Vision-based multimodal emotion extraction.
 Maps human feelings to continuous Valence (-1..1), Arousal (0..1), and Intensity (0..1).
 """

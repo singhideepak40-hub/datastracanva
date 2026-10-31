@@ -1,5 +1,5 @@
 """
-Storage and Analytics Module for Dastaan Canvas
+Storage and Analytics Module for Sudarshan Studio
 Handles:
 - Emotion Timeline Interactive Plotly Graph (Valence & Arousal journey)
 - SQLite Session Archival & Memory Wall / Gallery
@@ -20,7 +20,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from PIL import Image
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "dastaan_memory.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "sudarshan_memory.db")
 
 class MemoryStore:
     @staticmethod
@@ -202,12 +202,12 @@ class ExportEngine:
             spaceAfter=14
         )
 
-        safe_title = html.escape(str(session_title or "Dastaan Storybook"))
+        safe_title = html.escape(str(session_title or "Sudarshan Storybook"))
         safe_char = html.escape(str(character.get('name', 'Hero')))
         safe_set = html.escape(str(setting.get('name', 'Enchanted Realm')))
 
         elements = []
-        elements.append(Paragraph(f"✨ Dastaan Canvas: {safe_title}", title_style))
+        elements.append(Paragraph(f"✨ Sudarshan Studio: {safe_title}", title_style))
         elements.append(Paragraph(f"Hero: {safe_char} | Setting: {safe_set}", sub_style))
         elements.append(Spacer(1, 10))
 
@@ -224,7 +224,7 @@ class ExportEngine:
 
     @staticmethod
     def generate_html_poster(scene: dict, character: dict) -> str:
-        """Generates a shareable HTML card snapshot with Pokecut aesthetic styling."""
+        """Generates a shareable HTML card snapshot with Sudarshan aesthetic styling."""
         return f"""
         <div style="
           background: linear-gradient(135deg, #131722 0%, #1A2234 100%);
@@ -238,7 +238,7 @@ class ExportEngine:
           box-shadow: 0 20px 40px rgba(0,0,0,0.6);
         ">
           <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #58A6FF; margin-bottom: 8px;">
-            ✨ DASTAAN CANVAS COLLECTIBLE
+            ✨ SUDARSHAN STUDIO COLLECTIBLE
           </div>
           <h2 style="margin: 0 0 10px 0; font-size: 20px; color: #FFF;">{scene.get('title', 'Story Scene')}</h2>
           <p style="font-size: 13px; line-height: 1.6; color: #C9D1D9; margin-bottom: 14px;">

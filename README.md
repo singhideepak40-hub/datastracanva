@@ -1,13 +1,13 @@
-# ✨ Dastaan Canvas (दास्तान कैनवास)
+# ✨ Sudarshan Studio (सुदर्शन स्टूडियो)
 
 > **Art that feels what you feel, and weaves a living tale scene by scene.**  
 > A proprietary multimodal AI visual system whose **behaviour is the message**—where human emotion dynamically dictates color palettes, fluid particle physics, cinematic framing, acoustic soundscapes, and branching narrative lore.  
-> Uniting the dark, high-precision canvas aesthetic of **Pokecut** with the magical, nostalgic wonder of **Toy Story**.
+> Uniting the dark, high-precision canvas aesthetic of **Sudarshan** with the magical, nostalgic wonder of **Toy Story**.
 
 ---
 
 ## 🌟 3-Line Pitch
-1. **Emotional Symbiosis:** Rather than generating isolated images, Dastaan Canvas listens to your emotional coordinates (valence and arousal) via text, voice, camera, or vision analysis.
+1. **Emotional Symbiosis:** Rather than generating isolated images, Sudarshan Studio listens to your emotional coordinates (valence and arousal) via text, voice, camera, or vision analysis.
 2. **Behavioral Expression:** System physics—p5.js particle velocity, color temperature, sound harmonics, and narrative tension—visibly and audibly transform to express your state of mind.
 3. **Living Storybook:** Persistent heroes (like *Babu the Clockwork Sparrow*) embark on a branching cinematic journey where your choices and emotions steer each chapter.
 
@@ -28,7 +28,7 @@ Neural engine credentials can be stored in `.streamlit/secrets.toml` or via syst
 # .streamlit/secrets.toml
 GEMINI_API_KEY = "your-api-key"
 ```
-*Note: If no API key is supplied, Dastaan Canvas automatically runs its built-in local sentiment heuristics and offline procedural generative art canvas.*
+*Note: If no API key is supplied, Sudarshan Studio automatically runs its built-in local sentiment heuristics and offline procedural generative art canvas.*
 
 ### 3. Launch Application
 ```bash
@@ -41,10 +41,11 @@ streamlit run app.py
 
 | Tab | Feature & Capabilities |
 | :--- | :--- |
-| **🎨 Living Canvas & Story Studio** | Multimodal emotion analysis, dynamic diffusion art, live reactive p5.js fluid canvas, audio narration & branching lore |
-| **✂️ Magic Studio Cutout** | Pokecut-style foreground subject segmentation (GrabCut), before/after comparison, transparent PNG download |
+| **🎨 Vision Context & Storyteller** | Multimodal emotion analysis, deep context/mood extraction, live reactive p5.js fluid canvas, audio narration & branching lore |
+| **✨ AI Image Generator** | Text-to-image synthesis elevated by in-house prompt engineering, watermark-free direct canvas integration |
+| **🔍 Prompt Image Enhancer** | Refines and enhances the *exact uploaded image* via prompt guidance (color grading, sharpness, relighting) |
+| **✂️ Sudarshan Studio Cutout** | Deep salient object matting (ISNet/U2NetP/GrabCut), before/after comparison, custom studio backdrops & transparent PNG download |
 | **🎚️ Mood & Style Transformer** | Optical color temperature (Cold $\leftrightarrow$ Warm), dynamic chaos sliders, and geometric studio filters |
-| **📈 Emotional Journey & Lore PDF** | Interactive Plotly trajectory chart of valence/arousal, session history, and ReportLab Storybook PDF export |
 
 ---
 

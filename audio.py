@@ -1,5 +1,5 @@
 """
-Audio Module for Dastaan Canvas
+Audio Module for Sudarshan Studio
 Handles:
 - Procedural Web Audio API ambient soundscapes matched to emotion (rain, celestial chimes, calming ocean, dramatic drone)
 - Client-side Web Speech API Text-to-Speech narration with language pitch/tone adjustments

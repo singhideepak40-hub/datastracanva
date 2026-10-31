@@ -1,8 +1,8 @@
 """
 ================================================================================
-✨ DASTAAN CANVAS | Intelligent Visual System & Story Studio ✨
+✨ SUDARSHAN STUDIO | Intelligent Visual System & Story Studio ✨
 ================================================================================
-A high-aesthetic creative platform combining Pokecut's studio precision
+A high-aesthetic creative platform combining Sudarshan's studio precision
 with deep multimodal image storytelling and prompt-guided image enhancement.
 
 Core Capabilities:
@@ -32,10 +32,10 @@ from src.model_engine import ModelEngine
 from src.image_generator import ImageGenerator
 
 # =========================================================================
-# PAGE SETUP & POKECUT STUDIO DARK THEME
+# PAGE SETUP & SUDARSHAN STUDIO DARK THEME
 # =========================================================================
 st.set_page_config(
-    page_title="Dastaan Canvas | AI Creative Studio",
+    page_title="Sudarshan Studio | AI Creative Studio",
     page_icon="✨",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -160,7 +160,7 @@ if "vision_insights" not in st.session_state:
 head_col1, head_col2 = st.columns([3, 1])
 
 with head_col1:
-    st.markdown("## ✨ Dastaan Canvas")
+    st.markdown("## ✨ Sudarshan Studio")
     st.markdown(
         "<p style='color: #8B949E; margin-top: -14px; font-size: 14px;'>"
         "Studio Visual Intelligence: <b>Deep Image Lore & Context</b> + <b>Prompt-Guided Image Enhancement</b>"
@@ -416,10 +416,10 @@ with tab_enhancer:
 
 
 # =========================================================================
-# TAB 4: MAGIC STUDIO CUTOUT (Pokecut Signature Background Isolation)
+# TAB 4: MAGIC STUDIO CUTOUT (Sudarshan Signature Background Isolation)
 # =========================================================================
 with tab_studio:
-    st.markdown("#### ✂️ Pokecut Studio Cutout & Background Isolation")
+    st.markdown("#### ✂️ Sudarshan Studio Cutout & Background Isolation")
     st.caption("Deep salient object matting with sub-pixel edge feathering & customizable studio backdrops.")
 
     active_img = st.session_state.get("current_image")
@@ -501,7 +501,7 @@ with tab_studio:
                     st.download_button(
                         label="⬇️ Download Cutout (PNG)",
                         data=buf.getvalue(),
-                        file_name="pokecut_studio_cutout.png",
+                        file_name="sudarshan_studio_cutout.png",
                         mime="image/png"
                     )
                 with c_down2:
@@ -567,6 +567,6 @@ with tab_transformer:
             st.download_button(
                 label="⬇️ Download Styled Masterpiece (PNG)",
                 data=buf.getvalue(),
-                file_name="dastaan_styled_canvas.png",
+                file_name="sudarshan_styled_canvas.png",
                 mime="image/png"
             )
